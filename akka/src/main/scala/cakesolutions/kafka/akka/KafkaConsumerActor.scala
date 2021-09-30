@@ -98,6 +98,7 @@ object KafkaConsumerActor {
       *
       * The client should ensure that received records are confirmed with 'commit = true' to ensure kafka tracks the commit point.
       *
+      * seekToEnd and seekToBegin both cannot be true
       * @param topics the topics to subscribe to start consuming from
       * @param assignedListener Optionally provide a callback when partitions are assigned.  Can be used if any initialisation is
       *                         required prior to receiving messages for the partition, such as to populate a cache.  Default implementation
@@ -105,12 +106,17 @@ object KafkaConsumerActor {
       * @param revokedListener Optionally provide a callback when partitions are revoked.  Can be used if any cleanup is
       *                         required after a partition assignment is revoked.  Default implementation
       *                         is to do nothing.
+      * @param seekToEnd Optionally provide a boolean value defaulting to false, when true the consumer gets seeked to end of partition.
+      * @param seekToBegin Optionally provide a boolean value defaulting to false, when true the consumer gets seeked to start of partition.
+      *
       */
     final case class AutoPartition(
-      topics: Iterable[String] = List(),
-      assignedListener: List[TopicPartition] => Unit = _ => (),
-      revokedListener: List[TopicPartition] => Unit = _ => ()
-    ) extends Subscribe
+                                    topics: Iterable[String] = List(),
+                                    assignedListener: List[TopicPartition] => Unit = _ => (),
+                                    revokedListener: List[TopicPartition] => Unit = _ => (),
+                                    seekToEnd: Boolean = false,
+                                    seekToBegin: Boolean = false
+                                  ) extends Subscribe
 
     /**
       * Subscribe to topics in auto assigned partition mode, relying on Kafka to manage the commit point for each partition.
@@ -136,10 +142,10 @@ object KafkaConsumerActor {
       *                         is to do nothing.
       */
     final case class AutoPartitionBasic(
-      topics: Iterable[String] = List(),
-      assignedListener: List[TopicPartition] => Unit = _ => (),
-      revokedListener: List[TopicPartition] => Unit = _ => ()
-    ) extends Subscribe
+                                         topics: Iterable[String] = List(),
+                                         assignedListener: List[TopicPartition] => Unit = _ => (),
+                                         revokedListener: List[TopicPartition] => Unit = _ => ()
+                                       ) extends Subscribe
 
     /**
       * Subscribe to topics in auto assigned partition mode with client managed offset commit positions for each partition.
@@ -159,10 +165,10 @@ object KafkaConsumerActor {
       * @param revokedListener a callback to provide the oppurtunity to cleanup any in memory state for revoked partitions.
       */
     final case class AutoPartitionWithManualOffset(
-      topics: Iterable[String],
-      assignedListener: List[TopicPartition] => Offsets,
-      revokedListener: List[TopicPartition] => Unit
-    ) extends Subscribe
+                                                    topics: Iterable[String],
+                                                    assignedListener: List[TopicPartition] => Offsets,
+                                                    revokedListener: List[TopicPartition] => Unit
+                                                  ) extends Subscribe
 
     /**
       * Subscribe to topics in manually assigned partition mode, relying on Kafka to manage the commit point for each partition.
@@ -237,15 +243,15 @@ object KafkaConsumerActor {
     * The last known subscription is included as part of the exception to support resubscription attempt on actor restart.
     */
   final case class ConsumerException(
-    lastSubscription: Option[Subscribe],
-    message: String = "Exception thrown from Kafka consumer!",
-    cause: Throwable = null
-  ) extends Exception(message, cause)
+                                      lastSubscription: Option[Subscribe],
+                                      message: String = "Exception thrown from Kafka consumer!",
+                                      cause: Throwable = null
+                                    ) extends Exception(message, cause)
 
   final case class KafkaConsumerInitFail(
-    message: String = "Error occurred while initializing Kafka consumer!",
-    cause: Throwable = null
-  ) extends Exception(message, cause)
+                                          message: String = "Error occurred while initializing Kafka consumer!",
+                                          cause: Throwable = null
+                                        ) extends Exception(message, cause)
 
   /**
     * Utilities for creating configurations for the [[KafkaConsumerActor]].
@@ -277,10 +283,10 @@ object KafkaConsumerActor {
     *                           Redeliveries are only attempted if unconfirmedTimeout > 0.
     */
   final case class Conf(
-    scheduleInterval: FiniteDuration = 1000.millis,
-    unconfirmedTimeout: FiniteDuration = 3.seconds,
-    maxRedeliveries: Int = 3
-  ) {
+                         scheduleInterval: FiniteDuration = 1000.millis,
+                         unconfirmedTimeout: FiniteDuration = 3.seconds,
+                         maxRedeliveries: Int = 3
+                       ) {
 
     /**
       * Extend the config with additional Typesafe config.
@@ -305,16 +311,16 @@ object KafkaConsumerActor {
     * @tparam V value deserialiser type
     */
   def props[K: TypeTag, V: TypeTag](
-    conf: Config,
-    keyDeserializer: Deserializer[K],
-    valueDeserializer: Deserializer[V],
-    downstreamActor: ActorRef
-  ): Props =
+                                     conf: Config,
+                                     keyDeserializer: Deserializer[K],
+                                     valueDeserializer: Deserializer[V],
+                                     downstreamActor: ActorRef
+                                   ): Props =
     props(
       KafkaConsumer.Conf[K, V](conf, keyDeserializer, valueDeserializer),
       KafkaConsumerActor.Conf(conf),
       downstreamActor
-  )
+    )
 
   /**
     * Create Akka `Props` for [[KafkaConsumerActor]] from a Typesafe config.
@@ -328,18 +334,18 @@ object KafkaConsumerActor {
     * @tparam V value deserialiser type
     */
   def props[K: TypeTag, V: TypeTag](
-    conf: Config,
-    keyDeserializer: Deserializer[K],
-    valueDeserializer: Deserializer[V],
-    downstreamActor: ActorRef,
-    consumer: JKafkaConsumer[K, V]
-  ): Props =
+                                     conf: Config,
+                                     keyDeserializer: Deserializer[K],
+                                     valueDeserializer: Deserializer[V],
+                                     downstreamActor: ActorRef,
+                                     consumer: JKafkaConsumer[K, V]
+                                   ): Props =
     props(
       KafkaConsumer.Conf[K, V](conf, keyDeserializer, valueDeserializer),
       KafkaConsumerActor.Conf(conf),
       downstreamActor,
       consumer
-  )
+    )
 
   /**
     * Create Akka `Props` for [[KafkaConsumerActor]].
@@ -351,10 +357,10 @@ object KafkaConsumerActor {
     * @tparam V value deserialiser type
     */
   def props[K: TypeTag, V: TypeTag](
-    consumerConf: KafkaConsumer.Conf[K, V],
-    actorConf: KafkaConsumerActor.Conf,
-    downstreamActor: ActorRef
-  ): Props =
+                                     consumerConf: KafkaConsumer.Conf[K, V],
+                                     actorConf: KafkaConsumerActor.Conf,
+                                     downstreamActor: ActorRef
+                                   ): Props =
     Props(new KafkaConsumerActorImpl[K, V](consumerConf, actorConf, downstreamActor))
 
   /**
@@ -368,11 +374,11 @@ object KafkaConsumerActor {
     * @tparam V value deserialiser type
     */
   def props[K: TypeTag, V: TypeTag](
-    consumerConf: KafkaConsumer.Conf[K, V],
-    actorConf: KafkaConsumerActor.Conf,
-    downstreamActor: ActorRef,
-    consumer: JKafkaConsumer[K, V]
-  ): Props =
+                                     consumerConf: KafkaConsumer.Conf[K, V],
+                                     actorConf: KafkaConsumerActor.Conf,
+                                     downstreamActor: ActorRef,
+                                     consumer: JKafkaConsumer[K, V]
+                                   ): Props =
     Props(new KafkaConsumerActorImpl[K, V](consumerConf, actorConf, downstreamActor, Some(consumer)))
 
   /**
@@ -387,11 +393,11 @@ object KafkaConsumerActor {
     * @param actorFactory the actor factory to create the actor with
     */
   def apply[K: TypeTag, V: TypeTag](
-    conf: Config,
-    keyDeserializer: Deserializer[K],
-    valueDeserializer: Deserializer[V],
-    downstreamActor: ActorRef
-  )(implicit actorFactory: ActorRefFactory): KafkaConsumerActor = {
+                                     conf: Config,
+                                     keyDeserializer: Deserializer[K],
+                                     valueDeserializer: Deserializer[V],
+                                     downstreamActor: ActorRef
+                                   )(implicit actorFactory: ActorRefFactory): KafkaConsumerActor = {
     val p = props(conf, keyDeserializer, valueDeserializer, downstreamActor)
     val ref = actorFactory.actorOf(p)
     fromActorRef(ref)
@@ -410,12 +416,12 @@ object KafkaConsumerActor {
     * @param actorFactory the actor factory to create the actor with
     */
   def apply[K: TypeTag, V: TypeTag](
-    conf: Config,
-    keyDeserializer: Deserializer[K],
-    valueDeserializer: Deserializer[V],
-    downstreamActor: ActorRef,
-    consumer: JKafkaConsumer[K, V]
-  )(implicit actorFactory: ActorRefFactory): KafkaConsumerActor = {
+                                     conf: Config,
+                                     keyDeserializer: Deserializer[K],
+                                     valueDeserializer: Deserializer[V],
+                                     downstreamActor: ActorRef,
+                                     consumer: JKafkaConsumer[K, V]
+                                   )(implicit actorFactory: ActorRefFactory): KafkaConsumerActor = {
     val p = props(conf, keyDeserializer, valueDeserializer, downstreamActor, consumer)
     val ref = actorFactory.actorOf(p)
     fromActorRef(ref)
@@ -432,10 +438,10 @@ object KafkaConsumerActor {
     * @param actorFactory the actor factory to create the actor with
     */
   def apply[K: TypeTag, V: TypeTag](
-    consumerConf: KafkaConsumer.Conf[K, V],
-    actorConf: KafkaConsumerActor.Conf,
-    downstreamActor: ActorRef
-  )(implicit actorFactory: ActorRefFactory): KafkaConsumerActor = {
+                                     consumerConf: KafkaConsumer.Conf[K, V],
+                                     actorConf: KafkaConsumerActor.Conf,
+                                     downstreamActor: ActorRef
+                                   )(implicit actorFactory: ActorRefFactory): KafkaConsumerActor = {
     val p = props(consumerConf, actorConf, downstreamActor)
     val ref = actorFactory.actorOf(p)
     fromActorRef(ref)
@@ -453,11 +459,11 @@ object KafkaConsumerActor {
     * @param actorFactory the actor factory to create the actor with
     */
   def apply[K: TypeTag, V: TypeTag](
-    consumerConf: KafkaConsumer.Conf[K, V],
-    actorConf: KafkaConsumerActor.Conf,
-    downstreamActor: ActorRef,
-    consumer: JKafkaConsumer[K, V]
-  )(implicit actorFactory: ActorRefFactory): KafkaConsumerActor = {
+                                     consumerConf: KafkaConsumer.Conf[K, V],
+                                     actorConf: KafkaConsumerActor.Conf,
+                                     downstreamActor: ActorRef,
+                                     consumer: JKafkaConsumer[K, V]
+                                   )(implicit actorFactory: ActorRefFactory): KafkaConsumerActor = {
     val p = props(consumerConf, actorConf, downstreamActor, consumer)
     val ref = actorFactory.actorOf(p)
     fromActorRef(ref)
@@ -501,11 +507,11 @@ final class KafkaConsumerActor private (val ref: ActorRef) {
 }
 
 private final class KafkaConsumerActorImpl[K: TypeTag, V: TypeTag](
-  consumerConf: KafkaConsumer.Conf[K, V],
-  actorConf: KafkaConsumerActor.Conf,
-  downstreamActor: ActorRef,
-  consumerOpt: Option[JKafkaConsumer[K, V]] = None
-) extends Actor with ActorLogging with PollScheduling {
+                                                                    consumerConf: KafkaConsumer.Conf[K, V],
+                                                                    actorConf: KafkaConsumerActor.Conf,
+                                                                    downstreamActor: ActorRef,
+                                                                    consumerOpt: Option[JKafkaConsumer[K, V]] = None
+                                                                  ) extends Actor with ActorLogging with PollScheduling {
 
   import KafkaConsumerActor._
   import PollScheduling.Poll
@@ -562,9 +568,9 @@ private final class KafkaConsumerActorImpl[K: TypeTag, V: TypeTag](
   }
 
   private case class Subscribed(
-    subscription: Subscribe,
-    lastConfirmedOffsets: Option[Offsets]
-  ) extends StateData {
+                                 subscription: Subscribe,
+                                 lastConfirmedOffsets: Option[Offsets]
+                               ) extends StateData {
 
     def toUnconfirmed(unconfirmed: Records): Unconfirmed = Unconfirmed(subscription, lastConfirmedOffsets, unconfirmed)
   }
@@ -589,12 +595,12 @@ private final class KafkaConsumerActorImpl[K: TypeTag, V: TypeTag](
   }
 
   private case class Unconfirmed(
-     subscription: Subscribe,
-     lastConfirmedOffsets: Option[Offsets],
-     unconfirmed: Records,
-     deliveryTime: LocalDateTime = LocalDateTime.now(),
-     redeliveryCount: Int = 0
-  ) extends UnconfirmedRecordsStateData {
+                                  subscription: Subscribe,
+                                  lastConfirmedOffsets: Option[Offsets],
+                                  unconfirmed: Records,
+                                  deliveryTime: LocalDateTime = LocalDateTime.now(),
+                                  redeliveryCount: Int = 0
+                                ) extends UnconfirmedRecordsStateData {
 
     def confirm(offsets: Offsets): Subscribed = Subscribed(subscription, Some(offsets))
 
@@ -606,13 +612,13 @@ private final class KafkaConsumerActorImpl[K: TypeTag, V: TypeTag](
   }
 
   private case class Buffered(
-    subscription: Subscribe,
-    lastConfirmedOffsets: Option[Offsets],
-    unconfirmed: Records,
-    deliveryTime: LocalDateTime = LocalDateTime.now(),
-    buffered: Records,
-    redeliveryCount: Int = 0
-  ) extends UnconfirmedRecordsStateData {
+                               subscription: Subscribe,
+                               lastConfirmedOffsets: Option[Offsets],
+                               unconfirmed: Records,
+                               deliveryTime: LocalDateTime = LocalDateTime.now(),
+                               buffered: Records,
+                               redeliveryCount: Int = 0
+                             ) extends UnconfirmedRecordsStateData {
 
     def confirm(offsets: Offsets): Unconfirmed =
       Unconfirmed(subscription, Some(offsets), buffered, LocalDateTime.now())
@@ -816,17 +822,27 @@ private final class KafkaConsumerActorImpl[K: TypeTag, V: TypeTag](
 
         case None =>
           schedulePoll(stateData = state)
-    }
+      }
 
     case c: Confirm =>
       log.info("Received a confirmation while waiting for rebalance to finish. Received offsets: {}", c.offsets)
   }
 
   private def subscribe(s: Subscribe): Unit = s match {
-    case Subscribe.AutoPartition(topics, assignedListener, revokedListener) =>
+    case Subscribe.AutoPartition(topics, assignedListener, revokedListener, seekToEnd, seekToBegin) =>
+      if(seekToEnd && seekToBegin){
+        throw new UnsupportedOperationException("Both seekToEnd and seekToBegin cannot be true")
+      }
       log.info(s"Subscribing in auto partition assignment mode to topics [{}].", topics.mkString(","))
       trackPartitions = new TrackPartitionsCommitMode(consumer, context.self, assignedListener, revokedListener)
       consumer.subscribe(topics.toList.asJava, trackPartitions)
+      val topicPartition = consumer.assignment()
+      if(seekToBegin){
+        consumer.seekToBeginning(topicPartition)
+      }
+      if(seekToEnd){
+        consumer.seekToEnd(topicPartition)
+      }
 
     case Subscribe.AutoPartitionBasic(topics, assignedListener, revokedListener) =>
       log.info(s"Subscribing in basic auto partition assignment mode to topics [{}].", topics.mkString(","))
