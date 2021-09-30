@@ -1,3 +1,6 @@
+This branch is for modified version of cacke solution kafka client.
+New thing included is to seek to beginning and seek to end while subscribing with auto partition. Upgrade akk to 2.6.16 and kafka to 2.50
+
 # Scala support for Apache Kafka's Java client library 0.9.0.x - 2.3.1
 
 [![Join the chat at https://gitter.im/cakesolutions/scala-kafka-client](https://badges.gitter.im/cakesolutions/scala-kafka-client.svg)](https://gitter.im/cakesolutions/scala-kafka-client?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
