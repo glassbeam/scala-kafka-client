@@ -1,11 +1,20 @@
+import sbt.Credentials
+import sbt.Keys.{credentials, resolvers}
+
 lazy val commonSettings = Seq(
   organization := "net.cakesolutions",
-  scalaVersion := "2.12.10",
+  scalaVersion := "2.13.3",
   crossScalaVersions := Seq("2.11.12", "2.12.10", "2.13.1"),
   publishMavenStyle := true,
-  bintrayOrganization := Some("cakesolutions"),
-  bintrayPackageLabels := Seq("scala", "kafka"),
-  //  resolvers += "Apache Staging" at "https://repository.apache.org/content/groups/staging/",
+  publishTo := Some(("glassbeam-jars" at "https://nexusweb.glassbeamfederal.com/repository/glassbeam-jars").withAllowInsecureProtocol(true)),
+  credentials += Credentials("Sonatype Nexus Repository Manager", "nexusweb.glassbeamfederal.com", "gbdev", "0rch3sys@123"),
+  resolvers ++= Seq(
+    ("glassbeam-jars" at "https://nexusweb.glassbeamfederal.com/repository/glassbeam-jars").withAllowInsecureProtocol(true)
+    ),
+
+  //bintrayOrganization := Some("cakesolutions"),
+  //bintrayPackageLabels := Seq("scala", "kafka"),
+  resolvers += "Apache Staging" at "https://repository.apache.org/content/groups/staging/",
   resolvers += Resolver.bintrayRepo("mockito", "maven"),
   scalacOptions in Compile ++= Seq(
     "-encoding", "UTF-8",
