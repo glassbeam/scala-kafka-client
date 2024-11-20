@@ -282,8 +282,10 @@ final class KafkaProducer[K, V](val producer: JProducer[K, V]) extends KafkaProd
   override def close(): Unit =
     producer.close()
 
-  override def close(timeout: FiniteDuration): Unit =
-    producer.close(timeout.toMillis, TimeUnit.MILLISECONDS)
+  override def close(timeout: FiniteDuration): Unit = {
+    producer.close()
+    //producer.close(timeout.toMillis, TimeUnit.MILLISECONDS)
+  }
 
   private def producerCallback(promise: Promise[RecordMetadata]): Callback =
     producerCallback(result => promise.complete(result))

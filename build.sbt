@@ -1,16 +1,21 @@
 import sbt.Credentials
 import sbt.Keys.{credentials, resolvers}
 
+val repoPass = sys.env.get("CODEARTIFACT_AUTH_TOKEN").getOrElse("")
+
 lazy val commonSettings = Seq(
   organization := "net.cakesolutions",
   scalaVersion := "2.13.3",
   crossScalaVersions := Seq("2.11.12", "2.12.10", "2.13.1"),
   publishMavenStyle := true,
-  publishTo := Some(("glassbeam-jars" at "https://nexusweb.glassbeamfederal.com/repository/glassbeam-jars").withAllowInsecureProtocol(true)),
-  credentials += Credentials("Sonatype Nexus Repository Manager", "nexusweb.glassbeamfederal.com", "gbdev", "0rch3sys@123"),
-  resolvers ++= Seq(
-    ("glassbeam-jars" at "https://nexusweb.glassbeamfederal.com/repository/glassbeam-jars").withAllowInsecureProtocol(true)
-    ),
+  publishTo := Some(("gbplatform-repo--platform" at "https://gbplatform-repo-817702607727.d.codeartifact.us-east-1.amazonaws.com/maven/platform")),
+  credentials += Credentials("gbplatform-repo/platform", "gbplatform-repo-817702607727.d.codeartifact.us-east-1.amazonaws.com", "aws", repoPass),
+  resolvers ++= Seq(("gbplatform-repo--platform" at "https://gbplatform-repo-817702607727.d.codeartifact.us-east-1.amazonaws.com/maven/platform")),
+//  publishTo := Some(("glassbeam-jars" at "https://nexusweb.glassbeamfederal.com/repository/glassbeam-jars").withAllowInsecureProtocol(true)),
+//  credentials += Credentials("Sonatype Nexus Repository Manager", "nexusweb.glassbeamfederal.com", "gbdev", "0rch3sys@123"),
+//  resolvers ++= Seq(
+//    ("glassbeam-jars" at "https://nexusweb.glassbeamfederal.com/repository/glassbeam-jars").withAllowInsecureProtocol(true)
+//    ),
 
   //bintrayOrganization := Some("cakesolutions"),
   //bintrayPackageLabels := Seq("scala", "kafka"),
