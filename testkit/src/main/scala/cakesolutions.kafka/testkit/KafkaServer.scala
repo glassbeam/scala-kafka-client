@@ -3,7 +3,8 @@ package cakesolutions.kafka.testkit
 import java.io.File
 import java.net.ServerSocket
 
-import kafka.server.{KafkaConfig, KafkaServerStartable}
+import kafka.server._
+import kafka.server.KafkaServer
 import org.apache.curator.test.TestingServer
 import org.apache.kafka.clients.consumer.{ConsumerConfig, KafkaConsumer, OffsetResetStrategy}
 import org.apache.kafka.clients.producer.{KafkaProducer, ProducerConfig, ProducerRecord}
@@ -11,6 +12,7 @@ import org.apache.kafka.common.serialization.{Deserializer, Serializer}
 import org.slf4j.LoggerFactory
 
 import scala.collection.JavaConverters._
+//import scala.jdk.CollectionConverters._
 import scala.collection.mutable.ArrayBuffer
 import scala.util.{Random, Try}
 
@@ -28,12 +30,16 @@ object KafkaServer {
   /**
     * Default configurations used by the Kafka test server
     */
-  val defaultConfig: Map[String, String] = Map(
+  val defaultConfig: Map[String, String] = Map.empty[String, String]
+
+    /** Map(
     KafkaConfig.BrokerIdProp  -> "1",
     KafkaConfig.ReplicaSocketTimeoutMsProp -> "1500",
     KafkaConfig.ControlledShutdownEnableProp -> "true",
-    KafkaConfig.AdvertisedHostNameProp -> "localhost"
-  )
+   // KafkaConfig.AdvertisedHostNameProp -> "localhost",
+    KafkaConfig.AdvertisedListenersProp -> "localhost"
+  ) **/
+
 
   /**
     * Default configurations used for consuming records using [[KafkaServer]].
@@ -110,7 +116,8 @@ final class KafkaServer(
   private val config = createConfig(kafkaPort, zookeeperPort, logDir = logDir, kafkaConfig)
 
   // Kafka Test Server
-  private val kafkaServer = new KafkaServerStartable(config)
+  private val kafkaServer = new KafkaRaftServer(config, time = ???)
+  //Server(config)
 
   def startup(): Unit = {
     log.info("ZK Connect String: {}", zkServer.getConnectString)
