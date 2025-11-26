@@ -5,7 +5,7 @@ val repoPass = sys.env.get("CODEARTIFACT_AUTH_TOKEN").getOrElse("")
 
 lazy val commonSettings = Seq(
   organization := "net.cakesolutions",
-  scalaVersion := "2.13.3",
+  scalaVersion := "2.13.12",
   crossScalaVersions := Seq("2.11.12", "2.12.10", "2.13.1"),
   publishMavenStyle := true,
   publishTo := Some(("gbplatform-repo--platform" at "https://gbplatform-repo-817702607727.d.codeartifact.us-east-1.amazonaws.com/maven/platform")),
